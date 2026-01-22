@@ -194,7 +194,7 @@ class Target {
         this.x = x;
         this.y = y;
         this.radius = radius;
-        this.restitution = 1.5; // Bouncy bumper - more than elastic
+        this.restitution = 1.1; // Bouncy bumper - gentle bounce
     }
 
     checkCollision(ball) {
