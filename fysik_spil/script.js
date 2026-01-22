@@ -12,6 +12,7 @@ class Ball {
         this.mass = radius;
         this.restitution = 0.7;
         this.friction = 0.99;
+        this.hitTargets = new Set(); // Track which targets this ball has hit
     }
 
     update(gravity, obstacles) {
@@ -194,7 +195,7 @@ class Target {
         this.x = x;
         this.y = y;
         this.radius = radius;
-        this.restitution = 1.1; // Bouncy bumper - gentle bounce
+        this.restitution = 1.5; // Bouncy bumper - more than elastic
     }
 
     checkCollision(ball) {
@@ -488,11 +489,19 @@ function update() {
 
     // Check collisions with targets
     for (let ball of balls) {
-        for (let target of targets) {
+        for (let targetIndex = 0; targetIndex < targets.length; targetIndex++) {
+            const target = targets[targetIndex];
             if (target.checkCollision(ball)) {
+                // Only count collision if this ball hasn't hit this target yet
+                if (!ball.hitTargets.has(targetIndex)) {
+                    ball.hitTargets.add(targetIndex);
+                    targetsHit++;
+                    updateStats();
+                }
                 target.bounceOffBall(ball);
-                targetsHit++;
-                updateStats();
+            } else {
+                // If ball is no longer colliding, remove it from the hit set
+                ball.hitTargets.delete(targetIndex);
             }
         }
     }
