@@ -1,0 +1,170 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 1100px;
+    width: 100%;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.controls {
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    align-items: center;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.control-group label {
+    font-weight: bold;
+    color: #333;
+}
+
+.control-group input[type="range"] {
+    width: 150px;
+    cursor: pointer;
+}
+
+.control-group span {
+    min-width: 40px;
+    color: #666;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+#launchBtn {
+    background: #4CAF50;
+    color: white;
+}
+
+#launchBtn:hover {
+    background: #45a049;
+}
+
+#launchBtn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+#resetBtn {
+    background: #2196F3;
+    color: white;
+}
+
+#resetBtn:hover {
+    background: #0b7dda;
+}
+
+.canvas-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #e8f4f8;
+}
+
+#gameCanvas {
+    display: block;
+    cursor: crosshair;
+    max-width: 100%;
+    height: auto;
+}
+
+.info {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.mode-display {
+    background: #fffacd;
+    padding: 15px;
+    border-radius: 8px;
+    flex: 1;
+    border-left: 4px solid #ffc107;
+}
+
+.mode-display p {
+    margin: 5px 0;
+    color: #333;
+}
+
+#modeText {
+    font-weight: bold;
+    color: #ff9800;
+}
+
+#instructionText {
+    font-size: 14px;
+    color: #666;
+}
+
+.stats {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #2196F3;
+}
+
+.stats p {
+    margin: 5px 0;
+    color: #333;
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    .controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .control-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .info {
+        flex-direction: column;
+    }
+}

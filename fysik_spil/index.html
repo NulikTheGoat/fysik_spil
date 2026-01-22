@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fysik Spil - Kastet Bolde</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Fysik Spil - Kastet Bolde</h1>
+        <div class="controls">
+            <div class="control-group">
+                <label for="strength">Kastekraft:</label>
+                <input type="range" id="strength" min="0" max="100" value="50">
+                <span id="strengthValue">50</span>
+            </div>
+            <div class="control-group">
+                <label for="angle">Vinkel (grader):</label>
+                <input type="range" id="angle" min="0" max="90" value="45">
+                <span id="angleValue">45</span>°
+            </div>
+            <div class="control-group">
+                <button id="launchBtn">Kast Bold!</button>
+                <button id="resetBtn">Reset Spil</button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        </div>
+
+        <div class="info">
+            <div class="mode-display">
+                <p id="modeText">Tilstand: Tegning af hindringer</p>
+                <p id="instructionText">Tegn hindringer ved at klikke og trække på canvas'et</p>
+            </div>
+            <div class="stats">
+                <p>Bolde kastet: <span id="ballCount">0</span></p>
+                <p>Mål ramt: <span id="targetsHit">0</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
