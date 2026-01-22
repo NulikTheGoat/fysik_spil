@@ -194,7 +194,7 @@ class Target {
         this.x = x;
         this.y = y;
         this.radius = radius;
-        this.hit = false;
+        this.restitution = 1.5; // Bouncy bumper - more than elastic
     }
 
     checkCollision(ball) {
@@ -204,21 +204,44 @@ class Target {
         return distance < this.radius + ball.radius;
     }
 
+    bounceOffBall(ball) {
+        // Bumper collision - bounce the ball away
+        const dx = ball.x - this.x;
+        const dy = ball.y - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance === 0) return; // Prevent division by zero
+        
+        // Normal vector pointing from bumper to ball
+        const nx = dx / distance;
+        const ny = dy / distance;
+        
+        // Push ball away from bumper
+        ball.x = this.x + nx * (this.radius + ball.radius);
+        ball.y = this.y + ny * (this.radius + ball.radius);
+        
+        // Reflect and amplify velocity
+        const dotProduct = ball.vx * nx + ball.vy * ny;
+        ball.vx = nx * dotProduct * 2 * this.restitution - ball.vx;
+        ball.vy = ny * dotProduct * 2 * this.restitution - ball.vy;
+    }
+
     draw(ctx) {
-        ctx.strokeStyle = this.hit ? '#FFD700' : '#4CAF50';
-        ctx.lineWidth = 3;
+        // Draw bumper as a filled circle with a border
+        ctx.fillStyle = '#FF1744'; // Red bumper
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Inner circle
-        ctx.fillStyle = this.hit ? 'rgba(255, 215, 0, 0.2)' : 'rgba(76, 175, 80, 0.1)';
         ctx.fill();
 
-        // Center dot
-        ctx.fillStyle = this.hit ? '#FFD700' : '#4CAF50';
+        // Border
+        ctx.strokeStyle = '#C41C3B';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Shine effect
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);
+        ctx.arc(this.x - this.radius / 3, this.y - this.radius / 3, this.radius / 3, 0, Math.PI * 2);
         ctx.fill();
     }
 }
@@ -466,8 +489,8 @@ function update() {
     // Check collisions with targets
     for (let ball of balls) {
         for (let target of targets) {
-            if (!target.hit && target.checkCollision(ball)) {
-                target.hit = true;
+            if (target.checkCollision(ball)) {
+                target.bounceOffBall(ball);
                 targetsHit++;
                 updateStats();
             }
