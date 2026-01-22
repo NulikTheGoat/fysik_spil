@@ -252,8 +252,7 @@ let obstacles = [];
 let targets = [];
 let gameState = 'drawing'; // 'drawing' or 'playing'
 let isDrawing = false;
-let currentLineStart = null;
-let currentLineEnd = null;
+let currentPath = []; // Points for current free hand drawing
 let ballsLaunched = 0;
 let targetsHit = 0;
 
@@ -303,10 +302,10 @@ function startDrawing(e) {
     if (gameState !== 'drawing') return;
     
     const rect = canvas.getBoundingClientRect();
-    currentLineStart = {
+    currentPath = [{
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
-    };
+    }];
     isDrawing = true;
 }
 
@@ -314,30 +313,39 @@ function draw(e) {
     if (!isDrawing || gameState !== 'drawing') return;
 
     const rect = canvas.getBoundingClientRect();
-    currentLineEnd = {
+    const point = {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
     };
+    
+    // Add point if it's far enough from the last point (avoid too many points)
+    const lastPoint = currentPath[currentPath.length - 1];
+    const dx = point.x - lastPoint.x;
+    const dy = point.y - lastPoint.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance > 3) {
+        currentPath.push(point);
+    }
 }
 
 function stopDrawing() {
     if (!isDrawing) return;
     
-    if (currentLineStart && currentLineEnd) {
-        if (Math.abs(currentLineStart.x - currentLineEnd.x) > 5 || 
-            Math.abs(currentLineStart.y - currentLineEnd.y) > 5) {
+    // Create obstacles from the path segments
+    if (currentPath.length > 1) {
+        for (let i = 0; i < currentPath.length - 1; i++) {
             obstacles.push(new Obstacle(
-                currentLineStart.x,
-                currentLineStart.y,
-                currentLineEnd.x,
-                currentLineEnd.y
+                currentPath[i].x,
+                currentPath[i].y,
+                currentPath[i + 1].x,
+                currentPath[i + 1].y
             ));
         }
     }
     
     isDrawing = false;
-    currentLineStart = null;
-    currentLineEnd = null;
+    currentPath = [];
 }
 
 function launchBall() {
@@ -545,16 +553,20 @@ function render() {
         ball.draw(ctx);
     }
 
-    // Draw current line being drawn
-    if (isDrawing && currentLineStart && currentLineEnd) {
+    // Draw current free hand path being drawn
+    if (isDrawing && currentPath.length > 0) {
         ctx.strokeStyle = '#FF9800';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.setLineDash([5, 5]);
         ctx.beginPath();
-        ctx.moveTo(currentLineStart.x, currentLineStart.y);
-        ctx.lineTo(currentLineEnd.x, currentLineEnd.y);
+        ctx.moveTo(currentPath[0].x, currentPath[0].y);
+        
+        for (let i = 1; i < currentPath.length; i++) {
+            ctx.lineTo(currentPath[i].x, currentPath[i].y);
+        }
+        
         ctx.stroke();
         ctx.setLineDash([]);
     }
