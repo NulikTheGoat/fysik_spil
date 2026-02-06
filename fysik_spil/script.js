@@ -12,6 +12,7 @@ class Ball {
         this.mass = radius;
         this.restitution = 0.7;
         this.friction = 0.99;
+        this.hitTargets = new Set(); // Track which targets this ball has hit
     }
 
     update(gravity, obstacles) {
@@ -194,7 +195,7 @@ class Target {
         this.x = x;
         this.y = y;
         this.radius = radius;
-        this.hit = false;
+        this.restitution = 1.5; // Bouncy bumper - more than elastic
     }
 
     checkCollision(ball) {
@@ -204,21 +205,44 @@ class Target {
         return distance < this.radius + ball.radius;
     }
 
+    bounceOffBall(ball) {
+        // Bumper collision - bounce the ball away
+        const dx = ball.x - this.x;
+        const dy = ball.y - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance === 0) return; // Prevent division by zero
+        
+        // Normal vector pointing from bumper to ball
+        const nx = dx / distance;
+        const ny = dy / distance;
+        
+        // Push ball away from bumper
+        ball.x = this.x + nx * (this.radius + ball.radius);
+        ball.y = this.y + ny * (this.radius + ball.radius);
+        
+        // Reflect and amplify velocity
+        const dotProduct = ball.vx * nx + ball.vy * ny;
+        ball.vx = nx * dotProduct * 2 * this.restitution - ball.vx;
+        ball.vy = ny * dotProduct * 2 * this.restitution - ball.vy;
+    }
+
     draw(ctx) {
-        ctx.strokeStyle = this.hit ? '#FFD700' : '#4CAF50';
-        ctx.lineWidth = 3;
+        // Draw bumper as a filled circle with a border
+        ctx.fillStyle = '#FF1744'; // Red bumper
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Inner circle
-        ctx.fillStyle = this.hit ? 'rgba(255, 215, 0, 0.2)' : 'rgba(76, 175, 80, 0.1)';
         ctx.fill();
 
-        // Center dot
-        ctx.fillStyle = this.hit ? '#FFD700' : '#4CAF50';
+        // Border
+        ctx.strokeStyle = '#C41C3B';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Shine effect
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);
+        ctx.arc(this.x - this.radius / 3, this.y - this.radius / 3, this.radius / 3, 0, Math.PI * 2);
         ctx.fill();
     }
 }
@@ -252,8 +276,7 @@ let obstacles = [];
 let targets = [];
 let gameState = 'drawing'; // 'drawing' or 'playing'
 let isDrawing = false;
-let currentLineStart = null;
-let currentLineEnd = null;
+let currentPath = []; // Points for current free hand drawing
 let ballsLaunched = 0;
 let targetsHit = 0;
 
@@ -303,10 +326,10 @@ function startDrawing(e) {
     if (gameState !== 'drawing') return;
     
     const rect = canvas.getBoundingClientRect();
-    currentLineStart = {
+    currentPath = [{
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
-    };
+    }];
     isDrawing = true;
 }
 
@@ -314,30 +337,39 @@ function draw(e) {
     if (!isDrawing || gameState !== 'drawing') return;
 
     const rect = canvas.getBoundingClientRect();
-    currentLineEnd = {
+    const point = {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
     };
+    
+    // Add point if it's far enough from the last point (avoid too many points)
+    const lastPoint = currentPath[currentPath.length - 1];
+    const dx = point.x - lastPoint.x;
+    const dy = point.y - lastPoint.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance > 3) {
+        currentPath.push(point);
+    }
 }
 
 function stopDrawing() {
     if (!isDrawing) return;
     
-    if (currentLineStart && currentLineEnd) {
-        if (Math.abs(currentLineStart.x - currentLineEnd.x) > 5 || 
-            Math.abs(currentLineStart.y - currentLineEnd.y) > 5) {
+    // Create obstacles from the path segments
+    if (currentPath.length > 1) {
+        for (let i = 0; i < currentPath.length - 1; i++) {
             obstacles.push(new Obstacle(
-                currentLineStart.x,
-                currentLineStart.y,
-                currentLineEnd.x,
-                currentLineEnd.y
+                currentPath[i].x,
+                currentPath[i].y,
+                currentPath[i + 1].x,
+                currentPath[i + 1].y
             ));
         }
     }
     
     isDrawing = false;
-    currentLineStart = null;
-    currentLineEnd = null;
+    currentPath = [];
 }
 
 function launchBall() {
@@ -457,11 +489,19 @@ function update() {
 
     // Check collisions with targets
     for (let ball of balls) {
-        for (let target of targets) {
-            if (!target.hit && target.checkCollision(ball)) {
-                target.hit = true;
-                targetsHit++;
-                updateStats();
+        for (let targetIndex = 0; targetIndex < targets.length; targetIndex++) {
+            const target = targets[targetIndex];
+            if (target.checkCollision(ball)) {
+                // Only count collision if this ball hasn't hit this target yet
+                if (!ball.hitTargets.has(targetIndex)) {
+                    ball.hitTargets.add(targetIndex);
+                    targetsHit++;
+                    updateStats();
+                }
+                target.bounceOffBall(ball);
+            } else {
+                // If ball is no longer colliding, remove it from the hit set
+                ball.hitTargets.delete(targetIndex);
             }
         }
     }
@@ -545,16 +585,20 @@ function render() {
         ball.draw(ctx);
     }
 
-    // Draw current line being drawn
-    if (isDrawing && currentLineStart && currentLineEnd) {
+    // Draw current free hand path being drawn
+    if (isDrawing && currentPath.length > 0) {
         ctx.strokeStyle = '#FF9800';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.setLineDash([5, 5]);
         ctx.beginPath();
-        ctx.moveTo(currentLineStart.x, currentLineStart.y);
-        ctx.lineTo(currentLineEnd.x, currentLineEnd.y);
+        ctx.moveTo(currentPath[0].x, currentPath[0].y);
+        
+        for (let i = 1; i < currentPath.length; i++) {
+            ctx.lineTo(currentPath[i].x, currentPath[i].y);
+        }
+        
         ctx.stroke();
         ctx.setLineDash([]);
     }
